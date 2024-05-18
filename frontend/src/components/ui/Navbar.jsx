@@ -17,7 +17,7 @@ export const Navbar = () => {
 	return (
 		<nav className='navbar navbar-expand-lg navbar-dark bg-dark'>
 			<div className='container-fluid'>
-				<NavLink className='navbar-brand' to='/'>
+				<NavLink className='navbar-brand' to='/tareas'>
 					Mi Aplicación
 				</NavLink>
 				<button
