@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import Axios from 'axios';
 import Swal from 'sweetalert2';
-import TablaCRUD from '../reutilizables/TablaCRUD';
+import TablaCRUD from '../reutilizable-tablaCrud/TablaCRUD.jsx';
 import { AuthContext } from '../../auth/authContext.jsx';
 
 export const CRUDUsuario = () => {
