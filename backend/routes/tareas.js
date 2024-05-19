@@ -9,7 +9,7 @@ router.get('/', tareasGet);
 
 router.post('/', [check('nombre', 'El nombre es obligatorio').not().isEmpty(), validarCampos], tareasPost);
 
-router.put('/', [check('id', 'No es un ID válido de Mongo').isMongoId(), check('id').custom(existeTareaPorId)], tareasPut);
+router.put('/:id', [check('id', 'No es un ID válido de Mongo').isMongoId(), check('id').custom(existeTareaPorId)], tareasPut);
 
 router.delete('/:id', [check('id', 'No es un ID válido de Mongo').isMongoId(), check('id').custom(existeTareaPorId), validarCampos], tareaDelete);
 

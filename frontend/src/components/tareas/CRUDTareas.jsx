@@ -15,6 +15,7 @@ export const CRUDTareas = () => {
 	const [tareasList, setTareas] = useState([]);
 	const [title, setTitle] = useState('');
 	const { user } = useContext(AuthContext);
+	const userEmail = user.correo;
 
 	const limpiarCampos = () => {
 		setFormState({
@@ -23,8 +24,12 @@ export const CRUDTareas = () => {
 			estado: false,
 		});
 	};
+
 	const addTarea = () => {
-		Axios.post('http://localhost:8080/api/tareas', formState)
+		Axios.post('http://localhost:8080/api/tareas', {
+			...formState,
+			userEmail: userEmail,
+		})
 			.then(() => {
 				getTareas();
 				limpiarCampos();
@@ -192,7 +197,7 @@ export const CRUDTareas = () => {
 				setOperationMode={setOperationMode}
 				formFields={[
 					{ name: 'nombre', label: 'Nombre', placeholder: 'Ingrese un nombre', type: 'text' },
-					{ name: 'description', label: 'Password', placeholder: 'Ingrese un password', type: 'password' },
+					{ name: 'description', label: 'Descripción', placeholder: 'Ingrese una descripción', type: 'text' },
 					{
 						name: 'estado',
 						label: 'Estado',

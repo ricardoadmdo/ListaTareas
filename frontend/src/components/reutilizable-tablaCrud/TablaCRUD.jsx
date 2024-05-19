@@ -127,24 +127,30 @@ const TablaCRUD = ({
 										return null;
 									}
 
+									// No renderizar el campo de estado si operationMode es 1 (crear nueva tarea)
+									if (field.name === 'estado' && operationMode === 1) {
+										return null;
+									}
+
 									// Si el campo es de tipo 'select', renderiza un elemento select
 									if (field.type === 'select') {
-										// Aquí se maneja el caso especial para el campo 'estado'
-										if (field.name === 'estado') {
+										// Ajustar el valor por defecto y las opciones para el campo de estado cuando operationMode es 2 (editar)
+										if (field.name === 'estado' && operationMode === 2) {
 											return (
 												<div className='input-group mb-3' key={field.name}>
 													<span className='input-group-text'>{field.label}:</span>
 													<select
-														defaultValue={formState[field.name] ? 'Completada' : 'Pendiente'}
+														defaultValue='Pendiente'
 														className='form-control'
 														onChange={(event) => handleChange(field.name, event.target.value === 'Completada')}
 													>
-														<option value='Completada'>Completada</option>
 														<option value='Pendiente'>Pendiente</option>
+														<option value='Completada'>Completada</option>
 													</select>
 												</div>
 											);
 										}
+
 										// Renderiza un select normal para otros campos
 										return (
 											<div className='input-group mb-3' key={field.name}>

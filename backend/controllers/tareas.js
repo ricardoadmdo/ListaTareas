@@ -9,7 +9,9 @@ const tareasGet = async (req = request, res = response) => {
 };
 
 const tareasPut = async (req, res) => {
-	const { id, ...resto } = req.body;
+	console.log(req.body.estado);
+	const { ...resto } = req.body;
+	const { id } = req.params;
 
 	const tarea = await Tarea.findByIdAndUpdate(id, resto);
 

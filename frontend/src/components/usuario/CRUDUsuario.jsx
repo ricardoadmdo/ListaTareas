@@ -205,8 +205,8 @@ export const CRUDUsuario = () => {
 				setOperationMode={setOperationMode}
 				formFields={[
 					{ name: 'nombre', label: 'Nombre', placeholder: 'Ingrese un nombre', type: 'text' },
-					{ name: 'password', label: 'Password', placeholder: 'Ingrese un password', type: 'password' },
-					{ name: 'correo', label: 'Correo Electrónico', placeholder: 'Ingrese un correo electrónico', type: 'correo' },
+					{ name: 'password', label: 'Contraseña', placeholder: 'Ingrese una contraseña', type: 'password' },
+					{ name: 'correo', label: 'Correo Electrónico', placeholder: 'Ingrese un correo electrónico', type: 'email' },
 					{
 						name: 'rol',
 						label: 'Rol',
