@@ -1,38 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import Axios from 'axios';
 import Swal from 'sweetalert2';
-import { useContext } from 'react';
+import TablaCRUD from '../reutilizable-tablaCrud/TablaCRUD.jsx';
 import { AuthContext } from '../../auth/authContext.jsx';
 
 export const CRUDTareas = () => {
 	const [id, setId] = useState('');
-	const [estado, setEstado] = useState(false);
-	const [nombre, setNombre] = useState('');
-	const [description, setDescription] = useState('');
-	const [operation, setOperation] = useState(1);
+	const [formState, setFormState] = useState({
+		nombre: '',
+		description: '',
+		estado: false,
+	});
+	const [operationMode, setOperationMode] = useState(1);
 	const [tareasList, setTareas] = useState([]);
 	const [title, setTitle] = useState('');
 	const { user } = useContext(AuthContext);
-	const userEmail = user.correo;
 
 	const limpiarCampos = () => {
-		setNombre('');
-		setDescription('');
-		setId('');
+		setFormState({
+			nombre: '',
+			description: '',
+			estado: false,
+		});
 	};
 	const addTarea = () => {
-		Axios.post('http://localhost:8080/api/tareas', {
-			nombre: nombre,
-			description: description,
-			estado: estado,
-			userEmail: userEmail,
-		})
+		Axios.post('http://localhost:8080/api/tareas', formState)
 			.then(() => {
 				getTareas();
 				limpiarCampos();
 				Swal.fire({
 					title: '<strong>Registro exitoso!!!</strong>',
-					html: '<i>La tarea <strong>' + nombre + '</strong> fue registrada con éxito</i>',
+					html: '<i>La tarea <strong>' + formState.nombre + '</strong> fue registrada con éxito</i>',
 					icon: 'success',
 					timer: 3000,
 				});
@@ -50,18 +48,13 @@ export const CRUDTareas = () => {
 	};
 
 	const updateTarea = () => {
-		Axios.put('http://localhost:8080/api/tareas', {
-			id: id,
-			nombre: nombre,
-			description: description,
-			estado: estado,
-		})
+		Axios.put(`http://localhost:8080/api/tareas/${id}`, formState)
 			.then(() => {
 				getTareas();
 				limpiarCampos();
 				Swal.fire({
 					title: '<strong>Actualización exitoso!!!</strong>',
-					html: '<i>La tarea <strong>' + nombre + '</strong> fue actualizada con éxito</i>',
+					html: '<i>La tarea <strong>' + formState.nombre + '</strong> fue actualizada con éxito</i>',
 					icon: 'success',
 					timer: 3000,
 				});
@@ -132,6 +125,7 @@ export const CRUDTareas = () => {
 
 	const validar = (event) => {
 		event.preventDefault();
+		const { nombre, description } = formState;
 		if (nombre.trim() === '' || description.trim() === '') {
 			Swal.fire({
 				icon: 'error',
@@ -139,11 +133,11 @@ export const CRUDTareas = () => {
 				text: 'Todos los campos son obligatorios',
 			});
 		} else {
-			if (operation === 1) {
+			if (operationMode === 1) {
 				addTarea();
 			}
 
-			if (operation === 2) {
+			if (operationMode === 2) {
 				updateTarea();
 			}
 
@@ -152,157 +146,66 @@ export const CRUDTareas = () => {
 		}
 	};
 
-	const openModal = (op, id, nombre, description, estado) => {
-		setOperation(op);
-		if (op === 1) {
+	const openModal = (op, tarea) => {
+		const estadoBooleano = op === 2 ? tarea.estado === 'Completada' : false;
+		// Reinicia el estado del formulario para un nuevo usuario o carga los datos para editar
+		setFormState({
+			nombre: op === 2 ? tarea.nombre : '',
+			description: op === 2 ? tarea.description : '',
+			estado: estadoBooleano,
+		});
+
+		// Establece el modo de operación y el título del modal
+		setOperationMode(op);
+		setTitle(op === 1 ? 'Registrar Tarea' : 'Editar Tarea');
+
+		// Si es modo de edición, establece el ID
+		if (op === 2) {
+			setId(tarea.uid);
+		} else {
 			setId('');
-			setNombre('');
-			setDescription('');
-			setEstado('');
-			setTitle('Registrar Tarea');
-		} else if (op === 2) {
-			setTitle('Editar Tarea');
-			setId(id);
-			setNombre(nombre);
-			setDescription(description);
-			setEstado(estado);
 		}
-		window.setTimeout(function () {
+
+		// Enfoca el primer campo del formulario después de un breve retraso
+		window.setTimeout(() => {
 			document.getElementById('nombre').focus();
 		}, 500);
 	};
 
-	const handleEstado = (event) => {
-		setEstado(event.target.value === 'Completada');
-	};
-
 	return (
-		<div className='container-fluid'>
-			<div className='row mt-3 animate__animated animate__fadeIn'>
-				<div className='col-md-4 offset-md-4'>
-					<div className='d-grid mx-auto'>
-						<button onClick={() => openModal(1)} className='btn btn-dark' data-bs-toggle='modal' data-bs-target='#modalTareas'>
-							<i className='fa-solid fa-circle-plus'></i> Añadir nueva Tarea
-						</button>
-					</div>
-				</div>
-				<div className='row mt-3 '>
-					<div className='card-body'>
-						<div className='table-responsive'>
-							<table className='table table-bordered'>
-								<thead>
-									<tr>
-										<th>ID</th>
-										<th>Nombre</th>
-										<th>Descripción</th>
-										<th>Estado</th>
-										<th>Acciones</th>
-									</tr>
-								</thead>
-								<tbody className='table-group-divider'>
-									{tareasList.map((val) => {
-										return (
-											<tr key={val.uid}>
-												<td>{val.uid}</td>
-												<td>{val.nombre}</td>
-												<td>{val.description}</td>
-												<td>{val.estado ? 'Completada' : 'Pendiente'} </td>
-
-												<td>
-													<button
-														type='button'
-														onClick={() => {
-															openModal(2, val.uid, val.nombre, val.description, val.estado);
-														}}
-														className='btn btn-warning'
-														data-bs-toggle='modal'
-														data-bs-target='#modalTareas'
-													>
-														<i className='fas fa-edit'></i>
-														Editar
-													</button>
-													<button
-														type='button'
-														onClick={() => {
-															deleteTarea(val);
-														}}
-														className='btn btn-danger'
-													>
-														<i className='fas fa-trash'></i>
-														Eliminar
-													</button>
-												</td>
-											</tr>
-										);
-									})}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			{/* <!-- Modal --> */}
-			<div id='modalTareas' className='modal fade animate__animated animate__fadeIn' aria-hidden='true'>
-				<div className='modal-dialog modal-dialog-centered'>
-					<div className='modal-content'>
-						<div className='modal-header'>
-							<label className='h5'>{title}</label>
-							<button type='button' className='btn-close' data-bs-dismiss='modal' aria-label='Close'>
-								{' '}
-							</button>
-						</div>
-						<div className='modal-body'>
-							<input type='hidden' id='id'></input>
-
-							<form id='Form' onSubmit={validar}>
-								<div className='input-group mb-3'>
-									<span className='input-group-text'>Nombre:</span>
-									<input
-										type='text'
-										id='nombre'
-										className='form-control'
-										placeholder='Ingrese un nombre'
-										value={nombre}
-										onChange={(event) => setNombre(event.target.value)}
-									></input>
-								</div>
-
-								<div className='input-group mb-3'>
-									<span className='input-group-text'>Descripción:</span>
-									<input
-										type='text'
-										id='description'
-										className='form-control'
-										placeholder='Ingrese una description'
-										value={description}
-										onChange={(event) => setDescription(event.target.value)}
-									></input>
-								</div>
-
-								<div className='input-group mb-3'>
-									<span className='input-group-text'>Estado:</span>
-									<select defaultValue={false} className='form-control' onChange={handleEstado}>
-										<option>Pendiente</option>
-										<option>Completada</option>
-									</select>
-								</div>
-							</form>
-							<div className='d-grid col-6 mx-auto'>
-								<button type='submit' form='Form' className='btn btn-success'>
-									<i className='fa fa-floppy-disk'></i> Guardar
-								</button>
-							</div>
-
-							<div className='modal-footer'>
-								<button id='btnCerrar' type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
-									<i className='fa fa-times'></i> Cerrar
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
+		<>
+			<TablaCRUD
+				data={tareasList}
+				onAdd={() => openModal(1)}
+				columns={[
+					{ header: 'ID', accessor: 'uid' },
+					{ header: 'Nombre', accessor: 'nombre' },
+					{ header: 'Descripción', accessor: 'description' },
+					{ header: 'Estado', accessor: 'estado' },
+				]}
+				onEdit={(tarea) => openModal(2, tarea)}
+				onDelete={deleteTarea}
+				title={title}
+				modalTitle='Añadir nueva Tarea'
+				validate={validar}
+				operationMode={operationMode}
+				setOperationMode={setOperationMode}
+				formFields={[
+					{ name: 'nombre', label: 'Nombre', placeholder: 'Ingrese un nombre', type: 'text' },
+					{ name: 'description', label: 'Password', placeholder: 'Ingrese un password', type: 'password' },
+					{
+						name: 'estado',
+						label: 'Estado',
+						type: 'select',
+						options: [
+							{ value: true, label: true },
+							{ value: false, label: false },
+						],
+					},
+				]}
+				formState={formState}
+				setFormState={setFormState}
+			/>
+		</>
 	);
 };

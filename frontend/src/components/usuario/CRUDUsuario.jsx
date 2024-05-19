@@ -5,6 +5,7 @@ import TablaCRUD from '../reutilizable-tablaCrud/TablaCRUD.jsx';
 import { AuthContext } from '../../auth/authContext.jsx';
 
 export const CRUDUsuario = () => {
+	const [id, setId] = useState('');
 	const [formState, setFormState] = useState({
 		nombre: '',
 		password: '',
@@ -12,7 +13,6 @@ export const CRUDUsuario = () => {
 		rol: 'USER_ROLE', // Valor predeterminado para el rol
 	});
 	const [operationMode, setOperationMode] = useState(1);
-	const [id, setId] = useState('');
 	const [usuariosList, setUsuarios] = useState([]);
 	const [title, setTitle] = useState('');
 	const { user } = useContext(AuthContext);

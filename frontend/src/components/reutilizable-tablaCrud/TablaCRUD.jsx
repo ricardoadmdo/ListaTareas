@@ -75,7 +75,14 @@ const TablaCRUD = ({
 								{data.map((item) => (
 									<tr key={item.uid}>
 										{columns.map((column) => (
-											<td key={column.accessor}>{item[column.accessor]}</td>
+											<td key={column.accessor}>
+												{' '}
+												{column.accessor === 'estado'
+													? item[column.accessor]
+														? 'Completada'
+														: 'Pendiente'
+													: item[column.accessor]}
+											</td>
 										))}
 										<td>
 											<button
@@ -122,6 +129,23 @@ const TablaCRUD = ({
 
 									// Si el campo es de tipo 'select', renderiza un elemento select
 									if (field.type === 'select') {
+										// Aquí se maneja el caso especial para el campo 'estado'
+										if (field.name === 'estado') {
+											return (
+												<div className='input-group mb-3' key={field.name}>
+													<span className='input-group-text'>{field.label}:</span>
+													<select
+														defaultValue={formState[field.name] ? 'Completada' : 'Pendiente'}
+														className='form-control'
+														onChange={(event) => handleChange(field.name, event.target.value === 'Completada')}
+													>
+														<option value='Completada'>Completada</option>
+														<option value='Pendiente'>Pendiente</option>
+													</select>
+												</div>
+											);
+										}
+										// Renderiza un select normal para otros campos
 										return (
 											<div className='input-group mb-3' key={field.name}>
 												<span className='input-group-text'>{field.label}:</span>
@@ -162,6 +186,7 @@ const TablaCRUD = ({
 									</button>
 								</div>
 							</form>
+
 							<div className='modal-footer'>
 								<button id='btnCerrar' type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
 									<i className='fa fa-times'></i> Cerrar
@@ -199,7 +224,9 @@ TablaCRUD.propTypes = {
 			type: PropTypes.string,
 		})
 	).isRequired,
-	formState: PropTypes.objectOf(PropTypes.string).isRequired,
+	formState: PropTypes.shape({
+		estado: PropTypes.bool,
+	}),
 	setFormState: PropTypes.func.isRequired,
 };
 
