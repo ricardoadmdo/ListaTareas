@@ -29,7 +29,7 @@ router.post(
 );
 
 router.put(
-	'/',
+	'/:id',
 	[
 		check('id', 'No es un ID válido de Mongo').isMongoId(),
 		check('id').custom(existeUsuarioPorId),

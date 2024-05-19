@@ -17,14 +17,10 @@ const usuariosGet = async (req = request, res = response) => {
 };
 
 const usuariosPut = async (req, res) => {
-	const { id, password, google, correo, ...resto } = req.body;
+	const { id } = req.params;
+	const { ...dataToUpdate } = req.body;
 
-	if (password) {
-		//Encriptar el password
-		const salt = bcryptjs.genSaltSync();
-		resto.password = bcryptjs.hashSync(password, salt);
-	}
-	const usuario = await Usuario.findByIdAndUpdate(id, resto);
+	const usuario = await Usuario.findByIdAndUpdate(id, dataToUpdate);
 	res.json(usuario);
 };
 
@@ -44,8 +40,9 @@ const usuariosPost = async (req, res) => {
 };
 
 const usuariosDelete = async (req, res) => {
+	console.log(req.params);
 	const { id } = req.params;
-	
+
 	//Borrar Físicamente, no es recomendado hacer.
 	const usuario = await Usuario.findByIdAndDelete(id);
 

@@ -5,65 +5,62 @@ import TablaCRUD from '../reutilizables/TablaCRUD';
 import { AuthContext } from '../../auth/authContext.jsx';
 
 export const CRUDUsuario = () => {
-	const [nombre, setNombre] = useState('');
-	const [password, setPassword] = useState('');
-	const [email, setEmail] = useState('');
-	const [rol, setRol] = useState('USER_ROLE');
+	const [formState, setFormState] = useState({
+		nombre: '',
+		password: '',
+		correo: '',
+		rol: 'USER_ROLE', // Valor predeterminado para el rol
+	});
+	const [operationMode, setOperationMode] = useState(1);
 	const [id, setId] = useState('');
-	const [operation, setOperation] = useState(1);
 	const [usuariosList, setUsuarios] = useState([]);
 	const [title, setTitle] = useState('');
 	const { user } = useContext(AuthContext);
 
 	const limpiarCampos = () => {
-		setNombre('');
-		setPassword('');
-		setEmail('');
-		setRol('');
-		setId('');
+		setFormState({
+			nombre: '',
+			password: '',
+			correo: '',
+			rol: 'USER_ROLE',
+		});
 	};
 
 	const add = () => {
-		Axios.post('http://localhost:8080/api/usuarios', {
-			nombre: nombre,
-			password: password,
-			correo: email,
-			rol: rol,
-		})
+		Axios.post('http://localhost:8080/api/usuarios', formState)
 			.then(() => {
 				getUsuarios();
 				limpiarCampos();
 				Swal.fire({
 					title: '<strong>Registro exitoso!!!</strong>',
-					html: '<i>El usuario <strong>' + nombre + '</strong> fue registrado con éxito</i>',
+					html: '<i>El usuario <strong>' + formState.nombre + '</strong> fue registrado con éxito</i>',
 					icon: 'success',
 					timer: 3000,
 				});
 			})
 			.catch((error) => {
-				if (error.response) {
-					Swal.fire({
-						icon: 'error',
-						title: 'Error al agregar un usuario',
-						text: error.response.data.error,
-					});
-				}
+				const errorMessage =
+					error.response && error.response.data && error.response.data.error
+						? error.response.data.error
+						: 'Error desconocido al agregar un usuario';
+				Swal.fire({
+					icon: 'error',
+					title: 'Error al agregar un usuario',
+					text: errorMessage,
+				});
 			});
 	};
 
 	const update = () => {
-		Axios.put('http://localhost:8080/api/usuarios', {
-			id: id,
-			nombre: nombre,
-			email: email,
-			rol: rol,
-		})
+		// eslint-disable-next-line no-unused-vars
+		const { password, ...dataToUpdate } = formState; // Destructura para excluir la contraseña
+		Axios.put(`http://localhost:8080/api/usuarios/${id}`, dataToUpdate)
 			.then(() => {
 				getUsuarios();
 				limpiarCampos();
 				Swal.fire({
 					title: '<strong>Actualización exitosa!!!</strong>',
-					html: '<i>El usuario <strong>' + nombre + '</strong> fue actualizado con éxito</i>',
+					html: '<i>El usuario <strong>' + formState.nombre + '</strong> fue actualizado con éxito</i>',
 					icon: 'success',
 					timer: 3000,
 				});
@@ -91,7 +88,7 @@ export const CRUDUsuario = () => {
 				if (result.isConfirmed) {
 					Axios.delete(`http://localhost:8080/api/usuarios/${val.uid}`, {
 						headers: {
-							'x-token': `${user.token}`,
+							'x-token': user.token,
 						},
 					}).then(() => {
 						getUsuarios();
@@ -131,50 +128,59 @@ export const CRUDUsuario = () => {
 
 	const validar = (event) => {
 		event.preventDefault();
+		const { nombre, correo, password, rol } = formState;
 
-		if (nombre.trim() === '' || email.trim() === '') {
+		// Verifica que los campos 'nombre', 'correo' y 'rol' no estén vacíos
+		if (nombre.trim() === '' || correo.trim() === '' || rol.trim() === '') {
 			Swal.fire({
 				icon: 'error',
 				title: 'Campos Vacíos',
 				text: 'Todos los campos son obligatorios',
 			});
-		} else {
-			if (operation === 1) {
-				if (password.length >= 6) {
-					add();
-				} else {
-					Swal.fire({
-						icon: 'error',
-						title: 'Contraseña no válida',
-						text: 'La contraseña tiene que tener 6 o más caracteres',
-					});
-				}
-			}
-
-			if (operation === 2) {
-				update();
-			}
-
-			document.getElementById('btnCerrar').click();
-			getUsuarios();
+			return; // Detiene la ejecución si hay campos vacíos
 		}
+
+		// Si estamos en modo de creación, verifica la contraseña
+		if (operationMode === 1) {
+			if (!password || password.length < 6) {
+				Swal.fire({
+					icon: 'error',
+					title: 'Contraseña no válida',
+					text: 'La contraseña tiene que tener 6 o más caracteres',
+				});
+				return; // Detiene la ejecución si la contraseña no es válida
+			}
+			add(); // Llama a la función para agregar un nuevo usuario
+		} else if (operationMode === 2) {
+			update(); // Llama a la función para actualizar un usuario existente
+		}
+
+		document.getElementById('btnCerrar').click();
+		getUsuarios();
 	};
 
-	const openModal = (op, id, nombre, email, rol) => {
-		setId('');
-		setNombre('');
-		setEmail('');
-		setOperation(op);
-		if (op === 1) {
-			setTitle('Registrar Usuario');
-		} else if (op === 2) {
-			setId(id);
-			setTitle('Editar Usuario');
-			setNombre(nombre);
-			setEmail(email);
-			setRol(rol);
+	const openModal = (op, usuario) => {
+		// Reinicia el estado del formulario para un nuevo usuario o carga los datos para editar
+		setFormState({
+			nombre: op === 2 ? usuario.nombre : '',
+			password: '', // La contraseña siempre debe estar vacía al abrir el modal
+			correo: op === 2 ? usuario.correo : '',
+			rol: op === 2 ? usuario.rol : 'USER_ROLE', // Valor predeterminado para el rol
+		});
+
+		// Establece el modo de operación y el título del modal
+		setOperationMode(op);
+		setTitle(op === 1 ? 'Registrar Usuario' : 'Editar Usuario');
+
+		// Si es modo de edición, establece el ID
+		if (op === 2) {
+			setId(usuario.uid);
+		} else {
+			setId('');
 		}
-		window.setTimeout(function () {
+
+		// Enfoca el primer campo del formulario después de un breve retraso
+		window.setTimeout(() => {
 			document.getElementById('nombre').focus();
 		}, 500);
 	};
@@ -182,16 +188,37 @@ export const CRUDUsuario = () => {
 	return (
 		<>
 			<TablaCRUD
-				arrayList={usuariosList}
-				titleCrear='Añadir nuevo Usuario'
-				columnas={['ID', 'Nombre', 'Correo Electrónico', 'Rol', 'Acciones']}
-				values={[nombre, password, email, rol]}
-				setValues={[setNombre, setEmail, setPassword, setRol]}
-				openModal={openModal}
-				deleteItem={deleteUser}
+				data={usuariosList}
+				onAdd={() => openModal(1)}
+				columns={[
+					{ header: 'ID', accessor: 'uid' },
+					{ header: 'Nombre', accessor: 'nombre' },
+					{ header: 'Correo Electrónico', accessor: 'correo' },
+					{ header: 'Rol', accessor: 'rol' },
+				]}
+				onEdit={(usuario) => openModal(2, usuario)}
+				onDelete={deleteUser}
 				title={title}
-				validar={validar}
-				operation={operation}
+				modalTitle='Añadir nuevo Usuario'
+				validate={validar}
+				operationMode={operationMode}
+				setOperationMode={setOperationMode}
+				formFields={[
+					{ name: 'nombre', label: 'Nombre', placeholder: 'Ingrese un nombre', type: 'text' },
+					{ name: 'password', label: 'Password', placeholder: 'Ingrese un password', type: 'password' },
+					{ name: 'correo', label: 'Correo Electrónico', placeholder: 'Ingrese un correo electrónico', type: 'correo' },
+					{
+						name: 'rol',
+						label: 'Rol',
+						type: 'select',
+						options: [
+							{ value: 'USER_ROLE', label: 'USER_ROLE' },
+							{ value: 'ADMIN_ROLE', label: 'ADMIN_ROLE' },
+						],
+					},
+				]}
+				formState={formState}
+				setFormState={setFormState}
 			/>
 		</>
 	);

@@ -1,13 +1,60 @@
 import PropTypes from 'prop-types';
 
-const TablaCRUD = ({ arrayList, titleCrear, columnas, values, setValues, openModal, deleteItem, title, validar, operation }) => {
+const TablaCRUD = ({
+	data,
+	onAdd,
+	columns,
+	onEdit,
+	onDelete,
+	title,
+	modalTitle,
+	validate,
+	operationMode,
+	setOperationMode,
+	formFields,
+	formState,
+	setFormState,
+}) => {
+	// Funciones para manejar eventos generales
+	const handleAdd = () => {
+		// Reinicia el estado del formulario para un nuevo usuario
+		setFormState({
+			nombre: '',
+			password: '',
+			correo: '',
+			rol: '',
+		});
+		// Abre el modal en modo de creación
+		setOperationMode(1); // Modo 'crear'
+		onAdd();
+	};
+
+	const handleEdit = (item) => {
+		// Actualiza el estado del formulario con los datos del usuario que se va a editar
+		setFormState({
+			nombre: item.nombre,
+			password: '', // La contraseña no se carga por razones de seguridad
+			correo: item.correo,
+			rol: item.rol,
+		});
+		// Abre el modal en modo de edición
+		setOperationMode(2); // Modo 'editar'
+		onEdit(item);
+	};
+
+	const handleDelete = (item) => onDelete(item);
+
+	const handleChange = (name, value) => {
+		setFormState((prev) => ({ ...prev, [name]: value }));
+	};
+
 	return (
 		<div className='container-fluid'>
 			<div className='row mt-3'>
 				<div className='col-md-4 offset-md-4'>
 					<div className='d-grid mx-auto'>
-						<button onClick={() => openModal(1)} className='btn btn-dark' data-bs-toggle='modal' data-bs-target='#modal'>
-							<i className='fa-solid fa-circle-plus'></i> {titleCrear}
+						<button onClick={handleAdd} className='btn btn-dark' data-bs-toggle='modal' data-bs-target='#modal'>
+							<i className='fa-solid fa-circle-plus'></i> {modalTitle}
 						</button>
 					</div>
 				</div>
@@ -19,24 +66,21 @@ const TablaCRUD = ({ arrayList, titleCrear, columnas, values, setValues, openMod
 						<table className='table table-bordered'>
 							<thead>
 								<tr>
-									{columnas.map((columna, index) => (
-										<th key={index}>{columna}</th>
+									{columns.map((column, index) => (
+										<th key={index}>{column.header}</th>
 									))}
 								</tr>
 							</thead>
 							<tbody className='table-group-divider'>
-								{arrayList.map((val) => (
-									<tr key={val.uid}>
-										<td>{val.uid}</td>
-										<td>{val.nombre}</td>
-										<td>{val.correo}</td>
-										<td>{val.rol}</td>
+								{data.map((item) => (
+									<tr key={item.uid}>
+										{columns.map((column) => (
+											<td key={column.accessor}>{item[column.accessor]}</td>
+										))}
 										<td>
 											<button
 												type='button'
-												onClick={() => {
-													openModal(2, val.uid, val.nombre, val.correo, val.rol);
-												}}
+												onClick={() => handleEdit(item)}
 												className='btn btn-warning'
 												data-bs-toggle='modal'
 												data-bs-target='#modal'
@@ -45,13 +89,7 @@ const TablaCRUD = ({ arrayList, titleCrear, columnas, values, setValues, openMod
 												Editar
 											</button>
 											<span style={{ marginRight: '0px' }}></span>
-											<button
-												type='button'
-												onClick={() => {
-													deleteItem(val);
-												}}
-												className='btn btn-danger'
-											>
+											<button type='button' onClick={() => handleDelete(item)} className='btn btn-danger'>
 												<i className='fa fa-trash'></i>
 												Eliminar
 											</button>
@@ -63,6 +101,7 @@ const TablaCRUD = ({ arrayList, titleCrear, columnas, values, setValues, openMod
 					</div>
 				</div>
 			</div>
+			{/* Modal para añadir/editar elementos */}
 			<div className='modal fade animate__animated animate__fadeIn' id='modal' aria-hidden='true' aria-labelledby='exampleModalToggleLabel'>
 				<div className='modal-dialog modal-dialog-centered'>
 					<div className='modal-content'>
@@ -74,62 +113,55 @@ const TablaCRUD = ({ arrayList, titleCrear, columnas, values, setValues, openMod
 						</div>
 						<div className='modal-body'>
 							<input type='hidden' id='id'></input>
-							<form id='Form' onSubmit={validar}>
-								<div className='input-group mb-3'>
-									<span className='input-group-text'>Nombre:</span>
-									<input
-										type='text'
-										id='nombre'
-										className='form-control'
-										placeholder='Ingrese un nombre'
-										value={values.nombre}
-										onChange={(event) => setValues.setNombre(event.target.value)}
-									></input>
-								</div>
-								<div className='input-group mb-3'>
-									<span className='input-group-text'>Correo Electrónico:</span>
-									<input
-										type='email'
-										id='email'
-										className='form-control'
-										placeholder='Ingrese un correo electrónico'
-										value={values.email}
-										onChange={(event) => setValues.setEmail(event.target.value)}
-									></input>
-								</div>
+							<form id='Form' onSubmit={(event) => validate(event, formState)}>
+								{formFields.map((field) => {
+									// Si el campo es 'password' y estamos en modo 'editar', no se renderiza
+									if (field.name === 'password' && operationMode === 2) {
+										return null;
+									}
 
-								{operation === 1 && (
-									<div className='input-group mb-3'>
-										<span className='input-group-text'>Contraseña:</span>
-										<input
-											type='password'
-											id='password'
-											className='form-control'
-											placeholder='Ingrese una contraseña'
-											value={values.password}
-											onChange={(event) => setValues.setPassword(event.target.value)}
-										></input>
-									</div>
-								)}
-								<div className='input-group mb-3'>
-									<span className='input-group-text'>Rol:</span>
-									<select
-										defaultValue='USER_ROLE'
-										className='form-select'
-										aria-label='Default select example'
-										onChange={(event) => setValues.setRol(event.target.value)}
-									>
-										<option>USER_ROLE</option>
-										<option>ADMIN_ROLE</option>
-									</select>
+									// Si el campo es de tipo 'select', renderiza un elemento select
+									if (field.type === 'select') {
+										return (
+											<div className='input-group mb-3' key={field.name}>
+												<span className='input-group-text'>{field.label}:</span>
+												<select
+													defaultValue={formState[field.name]}
+													className='form-control'
+													onChange={(event) => handleChange(field.name, event.target.value)}
+												>
+													{field.options.map((option) => (
+														<option key={option.value} value={option.value}>
+															{option.label}
+														</option>
+													))}
+												</select>
+											</div>
+										);
+									}
+
+									// Para otros tipos de campos, renderiza un input
+									return (
+										<div className='input-group mb-3' key={field.name}>
+											<span className='input-group-text'>{field.label}:</span>
+											<input
+												type={field.type}
+												id={field.name}
+												className='form-control'
+												placeholder={field.placeholder}
+												value={formState[field.name]}
+												onChange={(event) => handleChange(field.name, event.target.value)}
+											/>
+										</div>
+									);
+								})}
+
+								<div className='d-grid col-6 mx-auto'>
+									<button type='submit' className='btn btn-success'>
+										<i className='fa fa-floppy-disk'></i> Guardar
+									</button>
 								</div>
 							</form>
-							<div className='d-grid col-6 mx-auto'>
-								<button type='submit' form='Form' className='btn btn-success'>
-									<i className='fa fa-floppy-disk'></i> Guardar
-								</button>
-							</div>
-
 							<div className='modal-footer'>
 								<button id='btnCerrar' type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
 									<i className='fa fa-times'></i> Cerrar
@@ -144,16 +176,31 @@ const TablaCRUD = ({ arrayList, titleCrear, columnas, values, setValues, openMod
 };
 
 TablaCRUD.propTypes = {
-	arrayList: PropTypes.array.isRequired,
-	titleCrear: PropTypes.string.isRequired,
-	columnas: PropTypes.array.isRequired,
-	values: PropTypes.array.isRequired,
-	setValues: PropTypes.array.isRequired,
-	openModal: PropTypes.func.isRequired,
-	deleteItem: PropTypes.func.isRequired,
+	data: PropTypes.array.isRequired,
+	onAdd: PropTypes.func.isRequired,
+	columns: PropTypes.arrayOf(
+		PropTypes.shape({
+			header: PropTypes.string.isRequired,
+			accessor: PropTypes.string.isRequired,
+		})
+	).isRequired,
+	onEdit: PropTypes.func.isRequired,
+	onDelete: PropTypes.func.isRequired,
+	modalTitle: PropTypes.string.isRequired,
 	title: PropTypes.string.isRequired,
-	validar: PropTypes.func.isRequired,
-	operation: PropTypes.number.isRequired,
+	validate: PropTypes.func.isRequired,
+	operationMode: PropTypes.number.isRequired,
+	setOperationMode: PropTypes.func.isRequired,
+	formFields: PropTypes.arrayOf(
+		PropTypes.shape({
+			name: PropTypes.string.isRequired,
+			label: PropTypes.string.isRequired,
+			placeholder: PropTypes.string,
+			type: PropTypes.string,
+		})
+	).isRequired,
+	formState: PropTypes.objectOf(PropTypes.string).isRequired,
+	setFormState: PropTypes.func.isRequired,
 };
 
 export default TablaCRUD;
